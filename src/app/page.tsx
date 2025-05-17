@@ -1,102 +1,482 @@
+'use client'
+import { useEffect, useRef, useState } from 'react';
 import Image from "next/image";
+import CalendarTable from '@/components/CalendarTable'
+import { Button } from '@/components/ui/button';
+import { Select, SelectItem, SelectContent, SelectValue, SelectTrigger } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from '@/components/ui/input';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+  const COMIC_IMAGES = [
+    { id: "comic1", name: "Comic 1", path: "/images/comic1.png" },
+    { id: "comic2", name: "Comic 2", path: "/images/comic2.png" },
+  ] as const
+
+  const [detectedFirstBubble, setDetectedFirstBubble] = useState<
+    Array<{ x: number; y: number; width: number; height: number; bubbleText: string }>
+  >([])
+  const [detectedSecondBubble, setDetectedSecondBubble] = useState<
+    Array<{ x: number; y: number; width: number; height: number; bubbleText: string }>
+  >([])
+  const [selectedBubble, setSelectedBubble] = useState<number | null>(null)
+  const [bubbleText, setBubbleText] = useState<string>("")
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(1)
+  const [bubbleTexts, setBubbleTexts] = useState<string[]>([])
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Birthday form state
+  const [name, setName] = useState("")
+  const [birthDay, setBirthDay] = useState("")
+  const [birthMonth, setBirthMonth] = useState("")
+  const [birthYear, setBirthYear] = useState("")
+  const [result, setResult] = useState("")
+  const [displayImages, setDisplayImages] = useState<string[]>([])
+
+  // Add new state for second image bubble texts
+  const [bubbleTexts1, setBubbleTexts1] = useState<string[]>([])
+  const [bubbleTexts2, setBubbleTexts2] = useState<string[]>([])
+
+  const formSchema = z.object({
+    name: z.string().min(2, {
+      message: "Name must be at least 2 characters.",
+    }),
+    birthDay: z.string().min(1, {
+      message: "Day is required",
+    }).refine((day) => {
+      const month = parseInt(birthMonth)
+      const dayNum = parseInt(day)
+      
+      if (month === 2) {
+        const year = parseInt(birthYear)
+        const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
+        const maxDays = isLeapYear ? 29 : 28
+        return dayNum <= maxDays
+      } else if ([4, 6, 9, 11].includes(month)) {
+        return dayNum <= 30
+      } else if ([1, 3, 5, 7, 8, 10, 12].includes(month)) {
+        return dayNum <= 31
+      }
+      return true
+    }, {
+      message: "Invalid day for the selected month"
+    }),
+    birthMonth: z.string().min(1, {
+      message: "Month is required",
+    }),
+    birthYear: z.string().min(1, {
+      message: "Year is required",
+    }),
+  })
+ 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      birthDay: "",
+      birthMonth: "",
+      birthYear: "",
+    },
+  })
+
+  const handleBirthdaySubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name || !birthDay || !birthMonth || !birthYear) {
+      setError("Please fill in all fields")
+      return
+    }
+
+    if (parseInt(birthDay) > 31 || parseInt(birthDay) < 1) {
+      setError("Invalid day, please enter a valid day")
+      return
+    }
+
+    // Validate days based on months
+    if (parseInt(birthMonth) === 2) {
+      if (parseInt(birthDay) > 29) {
+        setError("Invalid day, February has only 29 days")
+        return
+      }
+    } else if ([4, 6, 9, 11].includes(parseInt(birthMonth))) {
+      // April, June, September, November have 30 days
+      if (parseInt(birthDay) > 30) {
+        setError(`Invalid day, ${getMonthName(parseInt(birthMonth))} has only 30 days`)
+        return
+      }
+    } else if ([1, 3, 5, 7, 8, 10, 12].includes(parseInt(birthMonth))) {
+      // January, March, May, July, August, October, December have 31 days
+      if (parseInt(birthDay) > 31) {
+        setError(`Invalid day, ${getMonthName(parseInt(birthMonth))} has only 31 days`)
+        return
+      }
+    }
+
+    // Helper function to get month name
+    function getMonthName(month: number): string {
+      const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ]
+      return months[month - 1]
+    }
+
+    // Set the images to display
+    setDisplayImages(["/images/comic1.png", "/images/comic2.png"])
+    setError(null)
+    handleDetectBubbles()
+  }
+
+  const handleDetectBubbles = async () => {
+    setIsProcessing(true)
+    setError(null)
+    try {
+      // Create form data to send the image to the backend
+      const formData = new FormData()
+
+      // Send the image path directly
+      formData.append("image1", COMIC_IMAGES[0].path)
+      formData.append("image2", COMIC_IMAGES[1].path)
+
+      // Add birthday data
+      formData.append("birthDay", birthDay)
+      formData.append("birthMonth", birthMonth)
+      formData.append("birthYear", birthYear)
+
+      // Send to backend API
+      const response = await fetch("/api/detect-bubbles", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      // Process first image bubbles
+      const bubblesWithText1 = data.bubbles.image1.map((bubble: any) => ({
+        ...bubble,
+        bubbleText: bubbleTexts1[data.bubbles.image1.indexOf(bubble)] || ""
+      }))
+      setDetectedFirstBubble(bubblesWithText1)
+
+      // Process second image bubbles
+      const bubblesWithText2 = data.bubbles.image2.map((bubble: any) => ({
+        ...bubble,
+        bubbleText: bubbleTexts2[data.bubbles.image2.indexOf(bubble)] || ""
+      }))
+      setDetectedSecondBubble(bubblesWithText2)
+
+      const birthdayText = `${name}! Born on ${birthMonth}/${birthDay}/${birthYear}`
+      const birthdayText2 = `${name}! your fortune is...`
+      
+      // Set texts for first image bubbles
+      const newBubbleTexts1 = new Array(data.bubbles.image1.length).fill("")
+      newBubbleTexts1[0] = birthdayText
+      setBubbleTexts1(newBubbleTexts1)
+
+      // Set texts for second image bubbles
+      const newBubbleTexts2 = new Array(data.bubbles.image2.length).fill("")
+      newBubbleTexts2[0] = birthdayText2
+      setBubbleTexts2(newBubbleTexts2)
+
+      setSelectedBubble(1)
+      setResult("completed")
+    } catch (err) {
+      console.error("Error detecting bubbles:", err)
+      setError("Failed to detect bubbles. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (detectedFirstBubble.length > 0 && bubbleTexts1.length === 0) {
+      setBubbleTexts1(new Array(detectedFirstBubble.length).fill(""))
+    }
+    if (detectedSecondBubble.length > 0 && bubbleTexts2.length === 0) {
+      setBubbleTexts2(new Array(detectedSecondBubble.length).fill(""))
+    }
+  }, [detectedFirstBubble, bubbleTexts1.length, detectedSecondBubble, bubbleTexts2.length])
+
+  useEffect(() => {
+    if (selectedImage) {
+      drawImageWithBubbles()
+    }
+  }, [selectedImage, detectedFirstBubble, selectedBubble, bubbleTexts1, bubbleTexts2])
+
+  const drawImageWithBubbles = () => {
+    if (!canvasRef.current || !selectedImage) return
+
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    const img = new window.Image()
+    img.crossOrigin = "anonymous"
+    img.src = selectedImage
+
+    img.onload = () => {
+      // Set canvas dimensions to match image with zoom
+      canvas.width = img.width * zoom
+      canvas.height = img.height * zoom
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Draw the image with zoom
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+      // Draw detected bubbles
+      detectedFirstBubble.forEach((bubble, index) => {
+        // Apply zoom to bubble coordinates
+        const scaledBubble = {
+          x: bubble.x * zoom,
+          y: bubble.y * zoom,
+          width: bubble.width * zoom,
+          height: bubble.height * zoom,
+        }
+
+        ctx.strokeStyle = selectedBubble === index ? "#FF3366" : "#00AAFF"
+        ctx.lineWidth = 3
+        ctx.strokeRect(scaledBubble.x, scaledBubble.y, scaledBubble.width, scaledBubble.height)
+
+        // Add bubble number
+        ctx.fillStyle = selectedBubble === index ? "#FF3366" : "#00AAFF"
+        ctx.font = `${16 * zoom}px Arial`
+        ctx.fillText(`Bubble ${index + 1}`, scaledBubble.x, scaledBubble.y - 5 * zoom)
+
+        // Add text to bubble
+        if (bubbleTexts1[index]) {
+          // Configure text style
+          ctx.font = `${16 * zoom}px Arial`
+          ctx.fillStyle = "#000000"
+          ctx.textAlign = "center"
+
+          // Word wrapping logic
+          const maxWidth = scaledBubble.width - 20 * zoom
+          const lineHeight = 20 * zoom
+          const words = bubbleTexts1[index].split(" ")
+          let line = ""
+          const lines = []
+
+          for (let i = 0; i < words.length; i++) {
+            const testLine = line + words[i] + " "
+            const metrics = ctx.measureText(testLine)
+
+            if (metrics.width > maxWidth && i > 0) {
+              lines.push(line)
+              line = words[i] + " "
+            } else {
+              line = testLine
+            }
+          }
+          lines.push(line)
+
+          // Calculate vertical position to center text
+          const textY = scaledBubble.y + scaledBubble.height / 2 - ((lines.length - 1) * lineHeight) / 2
+
+          // Draw each line
+          lines.forEach((line, lineIndex) => {
+            ctx.fillText(line, scaledBubble.x + scaledBubble.width / 2, textY + lineIndex * lineHeight)
+          })
+        }
+      })
+
+      detectedSecondBubble.forEach((bubble, index) => {
+        // Apply zoom to bubble coordinates
+        const scaledBubble = {
+          x: bubble.x * zoom,
+          y: bubble.y * zoom,
+          width: bubble.width * zoom,
+          height: bubble.height * zoom,
+        }
+
+        ctx.strokeStyle = selectedBubble === index ? "#FF3366" : "#00AAFF"
+        ctx.lineWidth = 3
+        ctx.strokeRect(scaledBubble.x, scaledBubble.y, scaledBubble.width, scaledBubble.height)
+
+        // Add bubble number
+        ctx.fillStyle = selectedBubble === index ? "#FF3366" : "#00AAFF"
+        ctx.font = `${16 * zoom}px Arial`
+        ctx.fillText(`Bubble ${index + 1}`, scaledBubble.x, scaledBubble.y - 5 * zoom)
+
+        // Add text to bubble
+        if (bubbleTexts2[index]) {
+          // Configure text style
+          ctx.font = `${16 * zoom}px Arial`
+          ctx.fillStyle = "#000000"
+          ctx.textAlign = "center"
+
+          // Word wrapping logic
+          const maxWidth = scaledBubble.width - 20 * zoom
+          const lineHeight = 20 * zoom
+          const words = bubbleTexts2[index].split(" ")
+          let line = ""
+          const lines = []
+
+          for (let i = 0; i < words.length; i++) {
+            const testLine = line + words[i] + " "
+            const metrics = ctx.measureText(testLine)
+
+            if (metrics.width > maxWidth && i > 0) {
+              lines.push(line)
+              line = words[i] + " "
+            } else {
+              line = testLine
+            }
+          }
+          lines.push(line)
+
+          // Calculate vertical position to center text
+          const textY = scaledBubble.y + scaledBubble.height / 2 - ((lines.length - 1) * lineHeight) / 2
+
+          // Draw each line
+          lines.forEach((line, lineIndex) => {
+            ctx.fillText(line, scaledBubble.x + scaledBubble.width / 2, textY + lineIndex * lineHeight)
+          })
+        }
+      })
+    }
+  }
+
+ 
+  return (
+    <div className="min-h-screen flex flex-col max-w-screen-lg mx-auto">
+      <main className="flex flex-col gap-1 justify-center items-center">
+       <Form {...form}>
+        <form onSubmit={handleBirthdaySubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Name"
+                />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthMonth">Birth Month</Label>
+              <Select value={birthMonth} onValueChange={setBirthMonth}>
+                <SelectTrigger id="birthMonth">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                    <SelectItem key={month} value={month.toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="birthDay">Birth Day</Label>
+              <Input
+                id="birthDay"
+                type="number"
+                min="1"
+                max="31"
+                value={birthDay}
+                onChange={(e) => setBirthDay(e.target.value)}
+                placeholder="Day"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="birthYear">Birth Year</Label>
+              <Input
+                id="birthYear"
+                type="number"
+                min="1900"
+                max="2023"
+                value={birthYear}
+                onChange={(e) => setBirthYear(e.target.value)}
+                placeholder="Year"
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-red-500">{error}</p>}
+
+          <Button type="submit" className="w-full">
+            Continue
+          </Button>
+        </form>
+        </Form>
+        <div className="relative md:w-[360px] w-full mx-auto space-y-6">
+          {displayImages.map((imagePath, index) => (
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+              key={index}
+              src={imagePath}
+              alt={`Comic ${index + 1}`}
+              width={360}
+              height={0}
+              className="md:w-[500px] h-auto"
+              priority
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          ))}
+
+          {detectedFirstBubble.slice(2, 3).map((bubble, index) => (
+            <div
+              key={index}
+              className="absolute border-none"
+              style={{
+                left: `${bubble.x}px`,
+                top: `${bubble.y}px`,
+                width: `${bubble.width}px`,
+                height: `${bubble.height}px`
+              }}
+            >
+              <p className="text-center text-black z-50 mt-10">
+                {bubbleTexts1[index]}
+              </p>
+            </div>
+          ))}
+
+          {detectedSecondBubble.slice(2, 3).map((bubble, index) => (
+            <div
+              key={index}
+              className="relative border-none"
+              style={{
+                left: `${bubble.x}px`,
+                top: `-${bubble.y}px`,
+                width: `${bubble.width}px`,
+                height: `${bubble.height}px`
+              }}
+            >
+              <p className="text-center text-black z-[100] -mt-44">
+                {bubbleTexts2[index]}
+              </p>
+            </div>
+          ))}
+
+         {result && <CalendarTable name={name} birthDay={birthDay} birthMonth={birthMonth} birthYear={birthYear}/>}
         </div>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
       </footer>
     </div>
   );
