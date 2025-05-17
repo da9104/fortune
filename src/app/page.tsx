@@ -5,11 +5,9 @@ import CalendarTable from '@/components/CalendarTable'
 import { Button } from '@/components/ui/button';
 import { Select, SelectItem, SelectContent, SelectValue, SelectTrigger } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
 import {
   Form,
   FormControl,
@@ -64,7 +62,7 @@ export default function Home() {
     }).refine((day) => {
       const month = parseInt(birthMonth)
       const dayNum = parseInt(day)
-      
+
       if (month === 2) {
         const year = parseInt(birthYear)
         const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
@@ -86,45 +84,44 @@ export default function Home() {
       message: "Year is required",
     }),
   })
- 
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      birthDay: "",
-      birthMonth: "",
-      birthYear: "",
+      name: name,
+      birthDay: birthDay,
+      birthMonth: birthMonth,
+      birthYear: birthYear,
     },
   })
 
-  const handleBirthdaySubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name || !birthDay || !birthMonth || !birthYear) {
+  const handleBirthdaySubmit = (data: z.infer<typeof formSchema>) => {
+    if (!data.name || !data.birthDay || !data.birthMonth || !data.birthYear) {
       setError("Please fill in all fields")
       return
     }
 
-    if (parseInt(birthDay) > 31 || parseInt(birthDay) < 1) {
+    if (parseInt(data.birthDay) > 31 || parseInt(data.birthDay) < 1) {
       setError("Invalid day, please enter a valid day")
       return
     }
 
     // Validate days based on months
-    if (parseInt(birthMonth) === 2) {
-      if (parseInt(birthDay) > 29) {
+    if (parseInt(data.birthMonth) === 2) {
+      if (parseInt(data.birthDay) > 29) {
         setError("Invalid day, February has only 29 days")
         return
       }
-    } else if ([4, 6, 9, 11].includes(parseInt(birthMonth))) {
+    } else if ([4, 6, 9, 11].includes(parseInt(data.birthMonth))) {
       // April, June, September, November have 30 days
-      if (parseInt(birthDay) > 30) {
-        setError(`Invalid day, ${getMonthName(parseInt(birthMonth))} has only 30 days`)
+      if (parseInt(data.birthDay) > 30) {
+        setError(`Invalid day, ${getMonthName(parseInt(data.birthMonth))} has only 30 days`)
         return
       }
-    } else if ([1, 3, 5, 7, 8, 10, 12].includes(parseInt(birthMonth))) {
+    } else if ([1, 3, 5, 7, 8, 10, 12].includes(parseInt(data.birthMonth))) {
       // January, March, May, July, August, October, December have 31 days
-      if (parseInt(birthDay) > 31) {
-        setError(`Invalid day, ${getMonthName(parseInt(birthMonth))} has only 31 days`)
+      if (parseInt(data.birthDay) > 31) {
+        setError(`Invalid day, ${getMonthName(parseInt(data.birthMonth))} has only 31 days`)
         return
       }
     }
@@ -141,29 +138,30 @@ export default function Home() {
     // Set the images to display
     setDisplayImages(["/images/comic1.png", "/images/comic2.png"])
     setError(null)
-    handleDetectBubbles()
+    handleDetectBubbles(data)
   }
 
-  const handleDetectBubbles = async () => {
+  const handleDetectBubbles = async (formData: z.infer<typeof formSchema>) => {
     setIsProcessing(true)
     setError(null)
     try {
       // Create form data to send the image to the backend
-      const formData = new FormData()
+      const formDataToSend = new FormData()
 
       // Send the image path directly
-      formData.append("image1", COMIC_IMAGES[0].path)
-      formData.append("image2", COMIC_IMAGES[1].path)
-
-      // Add birthday data
-      formData.append("birthDay", birthDay)
-      formData.append("birthMonth", birthMonth)
-      formData.append("birthYear", birthYear)
+      formDataToSend.append("image1", COMIC_IMAGES[0].path)
+      formDataToSend.append("image2", COMIC_IMAGES[1].path)
+      
+      // Add birthday data using the passed form data
+      formDataToSend.append("name", formData.name)
+      formDataToSend.append("birthDay", formData.birthDay)
+      formDataToSend.append("birthMonth", formData.birthMonth)
+      formDataToSend.append("birthYear", formData.birthYear)
 
       // Send to backend API
       const response = await fetch("/api/detect-bubbles", {
         method: "POST",
-        body: formData,
+        body: formDataToSend,
       })
 
       if (!response.ok) {
@@ -171,7 +169,7 @@ export default function Home() {
       }
 
       const data = await response.json()
-      
+
       // Process first image bubbles
       const bubblesWithText1 = data.bubbles.image1.map((bubble: any) => ({
         ...bubble,
@@ -186,9 +184,9 @@ export default function Home() {
       }))
       setDetectedSecondBubble(bubblesWithText2)
 
-      const birthdayText = `${name}! Born on ${birthMonth}/${birthDay}/${birthYear}`
-      const birthdayText2 = `${name}! your fortune is...`
-      
+      const birthdayText = `${formData.name}! Born on ${formData.birthMonth}/${formData.birthDay}/${formData.birthYear}`
+      const birthdayText2 = `${formData.name}! your fortune is...`
+
       // Set texts for first image bubbles
       const newBubbleTexts1 = new Array(data.bubbles.image1.length).fill("")
       newBubbleTexts1[0] = birthdayText
@@ -359,72 +357,115 @@ export default function Home() {
     }
   }
 
- 
+
   return (
     <div className="min-h-screen flex flex-col max-w-screen-lg mx-auto">
       <main className="flex flex-col gap-1 justify-center items-center">
-       <Form {...form}>
-        <form onSubmit={handleBirthdaySubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Name"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleBirthdaySubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  defaultValue={name}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="name">Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="birthMonth">Birth Month</Label>
-              <Select value={birthMonth} onValueChange={setBirthMonth}>
-                <SelectTrigger id="birthMonth">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                    <SelectItem key={month} value={month.toString()}>
-                      {month}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              </div>
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="birthMonth"
+                  defaultValue={birthMonth}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="birthMonth">Birth Month</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger id="birthMonth">
+                            <SelectValue placeholder="Month" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                              <SelectItem key={month} value={month.toString()}>
+                                {month}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="birthDay"
+                  defaultValue={birthDay}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="birthDay">Birth Day</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          id="birthDay"
+                          type="number"
+                          min="1"
+                          max="31"
+                          placeholder="Day"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="birthYear"
+                  defaultValue={birthYear}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="birthYear">Birth Year</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          id="birthYear"
+                          type="number"
+                          min="1900"
+                          max="2023"
+                          placeholder="Year"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="birthDay">Birth Day</Label>
-              <Input
-                id="birthDay"
-                type="number"
-                min="1"
-                max="31"
-                value={birthDay}
-                onChange={(e) => setBirthDay(e.target.value)}
-                placeholder="Day"
-              />
-            </div>
+            {error && <p className="text-red-500">{error}</p>}
 
-            <div className="space-y-2">
-              <Label htmlFor="birthYear">Birth Year</Label>
-              <Input
-                id="birthYear"
-                type="number"
-                min="1900"
-                max="2023"
-                value={birthYear}
-                onChange={(e) => setBirthYear(e.target.value)}
-                placeholder="Year"
-              />
-            </div>
-          </div>
-
-          {error && <p className="text-red-500">{error}</p>}
-
-          <Button type="submit" className="w-full">
-            Continue
-          </Button>
-        </form>
+            <Button type="submit" className="w-full">
+              Continue
+            </Button>
+          </form>
         </Form>
         <div className="relative md:w-[360px] w-full mx-auto space-y-6">
           {displayImages.map((imagePath, index) => (
@@ -473,7 +514,7 @@ export default function Home() {
             </div>
           ))}
 
-         {result && <CalendarTable name={name} birthDay={birthDay} birthMonth={birthMonth} birthYear={birthYear}/>}
+          {result && <CalendarTable name={name} birthDay={birthDay} birthMonth={birthMonth} birthYear={birthYear} />}
         </div>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
