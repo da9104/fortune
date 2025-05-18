@@ -4,14 +4,12 @@ import Image from "next/image";
 import CalendarTable from '@/components/CalendarTable'
 import { Button } from '@/components/ui/button';
 import { Select, SelectItem, SelectContent, SelectValue, SelectTrigger } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -34,11 +32,9 @@ export default function Home() {
     Array<{ x: number; y: number; width: number; height: number; bubbleText: string }>
   >([])
   const [selectedBubble, setSelectedBubble] = useState<number | null>(null)
-  const [bubbleText, setBubbleText] = useState<string>("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
-  const [bubbleTexts, setBubbleTexts] = useState<string[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   // Birthday form state

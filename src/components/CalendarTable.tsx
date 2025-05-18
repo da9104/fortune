@@ -1,7 +1,6 @@
 "use client"
 import type React from "react"
 import Image from "next/image"
-import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 export default function CalendarTable({ name, birthDay, birthMonth, birthYear }: { name: string, birthDay: string, birthMonth: string, birthYear: string }) {
   return (

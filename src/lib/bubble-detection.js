@@ -5,7 +5,7 @@
  */
 
 // Import required libraries in a real implementation
-const cv = require("opencv4nodejs")
+// const cv = require("opencv4nodejs")
 const { createCanvas, loadImage } = require("canvas")
 
 /**
