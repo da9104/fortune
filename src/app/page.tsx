@@ -401,7 +401,7 @@ export default function Home() {
                           <SelectTrigger id="birthMonth">
                             <SelectValue placeholder="Month" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white dark:bg-black">
                             {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                               <SelectItem key={month} value={month.toString()}>
                                 {month}
@@ -465,12 +465,14 @@ export default function Home() {
 
             {error && <p className="text-red-500">{error}</p>}
 
-            <Button
-              variant="outline"
-              type="submit"
-              className="w-full bg-black text-white cursor-pointer">
-              Continue
-            </Button>
+            <div className="pb-10">
+              <Button
+                variant="outline"
+                type="submit"
+                className="w-full bg-black text-white cursor-pointer">
+                Continue
+              </Button>
+            </div>
           </form>
         </Form>
         <div className="relative md:w-[360px] w-full mx-auto space-y-6">

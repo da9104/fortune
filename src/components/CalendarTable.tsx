@@ -38,15 +38,15 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                 <TableHeader >
                   <TableRow className="border-none">
                     <TableHead className="border-none border-gray-800 p-3 text-2xl font-normal"></TableHead>
-                    <TableHead className="border-2 border-gray-800 p-3 text-2xl font-normal text-center">年</TableHead>
-                    <TableHead className="border-2 border-gray-800 p-3 text-2xl font-normal text-center">月</TableHead>
-                    <TableHead className="border-2 border-gray-800 p-3 text-2xl font-normal text-center">日</TableHead>
-                    <TableHead className="border-2 border-gray-800 p-3 text-2xl font-normal text-center">時</TableHead>
+                    <TableHead className="border-x border-gray-800 p-3 text-2xl font-normal text-center">年</TableHead>
+                    <TableHead className="border-x border-gray-800 p-3 text-2xl font-normal text-center">月</TableHead>
+                    <TableHead className="border-x border-gray-800 p-3 text-2xl font-normal text-center">日</TableHead>
+                    <TableHead className="border-b border-gray-800 p-3 text-2xl font-normal text-center">時</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell className="border-2 border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-y border-gray-800 p-1 text-xs text-center">
                       十星
                       <br />
                       <span className='text-xs'>(십성)</span>
@@ -66,14 +66,14 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                       <br />
                       <span className="text-xs">(비견)</span>
                     </TableCell>
-                    <TableCell className="border border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-3 text-xs text-center">
                       傷官
                       <br />
                       <span className="text-xs">(상관)</span>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="border-2 border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-1 text-xs text-center">
                       天干
                       <br />
                       <span className="text-xs">(천간)</span>
@@ -99,7 +99,7 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                         <div className="text-xs">음수</div>
                       </div>
                     </TableCell>
-                    <TableCell className="border border-gray-800 p-1">
+                    <TableCell className="border-b border-gray-800 p-1">
                       <div className="bg-gray-800 text-white rounded-xl p-2 text-center">
                         <div className="text-xs">계</div>
                         <div className="text-md font-bold">癸</div>
@@ -108,7 +108,7 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="border-2 border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-1 text-xs text-center">
                       地支
                       <br />
                       <span className="text-xs">(지지)</span>
@@ -134,7 +134,7 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                         <div className="text-xs">음수</div>
                       </div>
                     </TableCell>
-                    <TableCell className="border border-gray-800 p-1">
+                    <TableCell className="border-b border-gray-800 p-1">
                       <div className="bg-white border border-gray-300 rounded-xl p-2 text-center">
                         <div className="text-xs">유</div>
                         <div className="text-md font-bold">酉</div>
@@ -143,7 +143,7 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="border-2 border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-1 text-xs text-center">
                       十星
                       <br />
                       <span className="text-xs">(십성)</span>
@@ -163,14 +163,14 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                       <br />
                       <span className="text-xs">(식신)</span>
                     </TableCell>
-                    <TableCell className="border border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-3 text-xs text-center">
                       偏財
                       <br />
                       <span className="text-xs">(편재)</span>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="border-2 border-gray-800 p-0 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-0 text-xs text-center">
                       十二運星
                       <br />
                       <span className="text-[9px]">(십이운성)</span>
@@ -188,14 +188,14 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                       胎<br />
                       <span className="text-xs">(태)</span>
                     </TableCell>
-                    <TableCell className="border border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-3 text-xs text-center">
                       長生
                       <br />
                       <span className="text-xs">(장생)</span>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="border-2 border-gray-800 p-0 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-0 text-xs text-center">
                       十二神殺
                       <br />
                       <span className="text-[9px]">(십이신살)</span>
@@ -215,14 +215,14 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                       <br />
                       <span className="text-xs">(역마살)</span>
                     </TableCell>
-                    <TableCell className="border border-gray-800 p-3 text-xs text-center">
+                    <TableCell className="border-b border-gray-800 p-3 text-xs text-center">
                       將星殺
                       <br />
                       <span className="text-xs">(장성살)</span>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="border-2 border-gray-800 p-3 text-xs text-center" rowSpan={2}>
+                    <TableCell className="border-b border-gray-800 p-1 text-xs text-center" rowSpan={2}>
                       貴人
                       <br />
                       <span className="text-xs">(귀인)</span>
@@ -234,7 +234,7 @@ export default function CalendarTable({ name, birthDay, birthMonth, birthYear }:
                       <br />
                       <span className="text-[9px]">(천을귀인)</span>
                     </TableCell>
-                    <TableCell className="border border-gray-800 p-0 text-xs text-center" rowSpan={2}>
+                    <TableCell className="border-b border-gray-800 p-0 text-xs text-center" rowSpan={2}>
                       天乙
                       <br />
                       <span className="text-[9px]">(천을귀인)</span>
