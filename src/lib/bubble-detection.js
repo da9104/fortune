@@ -100,7 +100,6 @@ async function detectSpeechBubblesAdvanced(imageBuffer) {
     },
   ]
 }
-
 module.exports = {
   detectSpeechBubblesAdvanced,
 }
