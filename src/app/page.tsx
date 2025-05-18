@@ -91,6 +91,17 @@ export default function Home() {
     },
   })
 
+  // Watch form changes and update state variables
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      if (value.name !== undefined) setName(value.name)
+      if (value.birthDay !== undefined) setBirthDay(value.birthDay)
+      if (value.birthMonth !== undefined) setBirthMonth(value.birthMonth)
+      if (value.birthYear !== undefined) setBirthYear(value.birthYear)
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
+
   const handleBirthdaySubmit = (data: z.infer<typeof formSchema>) => {
     if (!data.name || !data.birthDay || !data.birthMonth || !data.birthYear) {
       setError("Please fill in all fields")
@@ -147,7 +158,7 @@ export default function Home() {
       // Send the image path directly
       formDataToSend.append("image1", COMIC_IMAGES[0].path)
       formDataToSend.append("image2", COMIC_IMAGES[1].path)
-      
+
       // Add birthday data using the passed form data
       formDataToSend.append("name", formData.name)
       formDataToSend.append("birthDay", formData.birthDay)
@@ -355,16 +366,15 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen flex flex-col max-w-screen-lg mx-auto">
+    <div className="min-h-screen flex flex-col max-w-screen-sm mx-auto font-noto-serif-kr md:p-0 p-4">
       <main className="flex flex-col gap-1 justify-center items-center">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleBirthdaySubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleBirthdaySubmit)} className="space-y-6 w-full">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <FormField
                   control={form.control}
                   name="name"
-                  defaultValue={name}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel htmlFor="name">Name</FormLabel>
@@ -383,7 +393,6 @@ export default function Home() {
                 <FormField
                   control={form.control}
                   name="birthMonth"
-                  defaultValue={birthMonth}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel htmlFor="birthMonth">Birth Month</FormLabel>
@@ -411,7 +420,6 @@ export default function Home() {
                 <FormField
                   control={form.control}
                   name="birthDay"
-                  defaultValue={birthDay}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel htmlFor="birthDay">Birth Day</FormLabel>
@@ -435,7 +443,6 @@ export default function Home() {
                 <FormField
                   control={form.control}
                   name="birthYear"
-                  defaultValue={birthYear}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel htmlFor="birthYear">Birth Year</FormLabel>
@@ -458,7 +465,10 @@ export default function Home() {
 
             {error && <p className="text-red-500">{error}</p>}
 
-            <Button type="submit" className="w-full">
+            <Button
+              variant="outline"
+              type="submit"
+              className="w-full bg-black text-white cursor-pointer">
               Continue
             </Button>
           </form>
@@ -479,7 +489,7 @@ export default function Home() {
           {detectedFirstBubble.slice(2, 3).map((bubble, index) => (
             <div
               key={index}
-              className="absolute border-none"
+              className="absolute border-none noto-serif-kr font-sm"
               style={{
                 left: `${bubble.x}px`,
                 top: `${bubble.y}px`,
@@ -496,7 +506,7 @@ export default function Home() {
           {detectedSecondBubble.slice(2, 3).map((bubble, index) => (
             <div
               key={index}
-              className="relative border-none"
+              className="relative border-none noto-serif-kr font-sm"
               style={{
                 left: `${bubble.x}px`,
                 top: `-${bubble.y}px`,
@@ -504,7 +514,7 @@ export default function Home() {
                 height: `${bubble.height}px`
               }}
             >
-              <p className="text-center text-black z-[100] -mt-44">
+              <p className="text-center text-black z-[100] -mt-40">
                 {bubbleTexts2[index]}
               </p>
             </div>
